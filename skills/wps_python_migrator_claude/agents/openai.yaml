@@ -1,0 +1,3 @@
+interface:
+  display_name: "WPS Python Migrator"
+  short_description: "Migrate local Python projects to WPS online Python"

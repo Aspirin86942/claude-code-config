@@ -1,0 +1,5 @@
+name: test
+dependencies:
+  - python=3.10
+  - pytest
+  - pyyaml

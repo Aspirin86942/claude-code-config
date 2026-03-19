@@ -1,0 +1,90 @@
+last_verified_against_official_docs: "2026-03-18"
+official_docs:
+  summary: "https://airsheet.wps.cn/pydocs/introduction/summary.html"
+  worksheet_read: "https://airsheet.wps.cn/pydocs/work_table/xl.html"
+  worksheet_write: "https://airsheet.wps.cn/pydocs/work_table/write_xl.html"
+  worksheet_delete: "https://airsheet.wps.cn/pydocs/work_table/delete_xl.html"
+  data_table_read: "https://airsheet.wps.cn/pydocs/db_table/dbt.html"
+  data_table_insert: "https://airsheet.wps.cn/pydocs/db_table/insert_dbt.html"
+  data_table_update: "https://airsheet.wps.cn/pydocs/db_table/update_dbt.html"
+  third_party_libraries: "https://airsheet.wps.cn/pydocs/thirdparty/thirdparty.html"
+snapshot_files:
+  - "wps参考手册.md"
+verification_levels:
+  - dedicated_api_doc_verified
+  - summary_example_verified
+  - unverified_or_snapshot_only
+worksheet:
+  verified_apis:
+    - xl
+    - write_xl
+    - delete_xl
+  verified_parameters:
+    xl:
+      - headers
+      - sheet_name
+      - book_url
+      - start_row
+      - start_column
+      - end_row
+      - end_column
+      - formula
+    write_xl:
+      - new_sheet
+      - sheet_name
+      - overfill
+      - book_url
+      - start_row
+      - start_column
+      - write_df_index
+    delete_xl:
+      - entire_row
+      - entire_column
+      - xl_shift_to_left
+      - book_url
+      - start_row
+      - start_column
+      - drop_sheet
+  verified_behaviors:
+    - "xl(sheet_name=None) returns dict[str, DataFrame]"
+    - "xl(sheet_name=list[str]) returns dict[str, DataFrame]"
+data_table:
+  verified_apis:
+    - dbt
+    - insert_dbt
+    - update_dbt
+  verified_parameters:
+    dbt:
+      - field
+      - sheet_name
+      - book_url
+    insert_dbt:
+      - new_sheet
+  verified_behaviors:
+    - "dbt() stores record ids in DataFrame.index for update_dbt() workflows"
+  unverified_or_snapshot_only:
+    - delete_dbt
+    - "dbt(..., condition=...)"
+cross_document:
+  dedicated_api_doc_verified:
+    - book_url
+  summary_example_verified:
+    - "Workbooks.Open(fileID, type)"
+  unverified_or_snapshot_only: []
+preferred_verified_subset:
+  - pandas
+  - numpy
+  - requests
+  - bs4
+  - pymysql
+  - pyecharts
+  - akshare
+  - tushare
+  - baostock
+official_supported_libraries_reference: "https://airsheet.wps.cn/pydocs/thirdparty/thirdparty.html"
+libraries_unverified_or_snapshot_only:
+  - polars
+limitations:
+  - data_table_write_incomplete
+  - object_field_write_lossy
+  - complex_fields_should_fall_back_to_worksheet_or_text

@@ -1,0 +1,16 @@
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "PROXY_MANAGED",
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:15721",
+    "API_TIMEOUT_MS": "600000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
+  "permissions": {
+    "deny": [],
+    "defaultMode": "bypassPermissions"
+  },
+  "model": "opus[1m]",
+  "effortLevel": "high",
+  "autoUpdatesChannel": "latest",
+  "skipDangerousModePermissionPrompt": true
+}
