@@ -1,0 +1,455 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Registry Schema",
+  "description": "集中注册表：定义所有可用子代理的元数据、输入契约和输出契约",
+  "version": "1.0.0",
+  "lastUpdated": "2026-03-19",
+  "agents": [
+    {
+      "id": "architect",
+      "name": "architect",
+      "file": "agents/architect.md",
+      "model": "opus",
+      "tools": ["Read", "Grep", "Glob"],
+      "description": "系统架构设计、技术决策、扩展性规划",
+      "triggerPatterns": ["架构设计", "系统架构", "技术选型", "扩展性", "scalability", "architecture", "重构", "refactor", "微服务", "设计新系统", "技术方案", "技术决策", "系统架构师"],
+      "inputContract": {
+        "description": "接受新需求/重构/架构设计任务",
+        "requiredFields": ["taskType", "requirements", "context"],
+        "optionalFields": ["constraints", "existingDocs", "stakeholders"],
+        "schema": {
+          "taskType": {"type": "string", "enum": ["new-feature", "refactor", "architecture-review", "technical-decision"]},
+          "requirements": {"type": "array", "items": {"type": "string"}, "description": "功能/非功能需求列表"},
+          "context": {"type": "string", "description": "项目背景/当前架构描述"},
+          "constraints": {"type": "array", "items": {"type": "string"}, "description": "技术栈/时间/资源约束"},
+          "existingDocs": {"type": "array", "items": {"type": "string"}, "description": "相关文档路径"},
+          "stakeholders": {"type": "array", "items": {"type": "string"}, "description": "干系人/团队"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["architectureDiagram", "components", "dataFlow", "tradeOffs", "recommendations"],
+        "schema": {
+          "architectureDiagram": {"type": "string", "description": "ASCII 架构图"},
+          "components": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "responsibility": {"type": "string"}, "interfaces": {"type": "array"}}}},
+          "dataFlow": {"type": "string", "description": "数据流转说明"},
+          "tradeOffs": {"type": "array", "items": {"type": "object", "properties": {"decision": {"type": "string"}, "pros": {"type": "array"}, "cons": {"type": "array"}, "alternatives": {"type": "array"}}}},
+          "recommendations": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["具体代码实现", "UI/UX 设计", "数据库细节设计"],
+      "errorHandling": "遇到模糊需求时输出澄清问题列表 (最多 5 个)"
+    },
+    {
+      "id": "planner",
+      "name": "planner",
+      "file": "agents/planner.md",
+      "model": "opus",
+      "tools": ["Read", "Grep", "Glob"],
+      "description": "复杂功能/重构的实施方案规划",
+      "triggerPatterns": ["实施计划", "实现方案", "功能开发", "复杂功能", "复杂重构", "拆解", "phases", "implementation plan", "计划", "方案", "步骤", "功能", "需求"],
+      "inputContract": {
+        "description": "接受复杂功能实现或重构任务",
+        "requiredFields": ["featureName", "requirements", "acceptanceCriteria"],
+        "optionalFields": ["technicalConstraints", "dependencies", "timeline"],
+        "schema": {
+          "featureName": {"type": "string", "description": "功能名称"},
+          "requirements": {"type": "array", "items": {"type": "string"}, "description": "需求列表"},
+          "acceptanceCriteria": {"type": "array", "items": {"type": "string"}, "description": "验收标准"},
+          "technicalConstraints": {"type": "array", "items": {"type": "string"}},
+          "dependencies": {"type": "array", "items": {"type": "string"}},
+          "timeline": {"type": "string", "description": "时间要求"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["overview", "phases", "steps", "testingStrategy", "risks"],
+        "schema": {
+          "overview": {"type": "string"},
+          "phases": {"type": "array", "items": {"type": "object", "properties": {"phaseName": {"type": "string"}, "goals": {"type": "array"}, "steps": {"type": "array"}}}},
+          "steps": {"type": "array", "items": {"type": "object", "properties": {"stepNumber": {"type": "integer"}, "action": {"type": "string"}, "filePath": {"type": "string"}, "dependencies": {"type": "array"}, "risk": {"type": "string", "enum": ["Low", "Medium", "High"]}}}},
+          "testingStrategy": {"type": "object", "properties": {"unitTests": {"type": "array"}, "integrationTests": {"type": "array"}, "e2eTests": {"type": "array"}}},
+          "risks": {"type": "array", "items": {"type": "object", "properties": {"description": {"type": "string"}, "mitigation": {"type": "string"}}}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["具体代码编写", "架构决策"],
+      "errorHandling": "需求不明确时输出澄清问题；发现冲突时列出矛盾点"
+    },
+    {
+      "id": "code-reviewer",
+      "name": "code-reviewer",
+      "file": "agents/code-reviewer.md",
+      "model": "sonnet",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "description": "通用代码审查 (安全/质量/React/Node)",
+      "triggerPatterns": ["代码审查", "code review", "代码检查", "质量检查", "pr review", "pull request", "审查代码", "代码质量", "审阅", "review", "PR", "合并请求"],
+      "inputContract": {
+        "description": "接受代码审查请求",
+        "requiredFields": ["changedFiles", "diffContent"],
+        "optionalFields": ["reviewFocus", "context"],
+        "schema": {
+          "changedFiles": {"type": "array", "items": {"type": "string"}, "description": "变更文件列表"},
+          "diffContent": {"type": "string", "description": "git diff 内容"},
+          "reviewFocus": {"type": "array", "items": {"type": "string", "enum": ["security", "quality", "performance", "style"]}},
+          "context": {"type": "string", "description": "变更背景/PR 描述"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["summary", "findings", "verdict"],
+        "schema": {
+          "summary": {"type": "object", "properties": {"filesChanged": {"type": "integer"}, "linesAdded": {"type": "integer"}, "linesDeleted": {"type": "integer"}}},
+          "findings": {"type": "array", "items": {"type": "object", "properties": {"severity": {"type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]}, "category": {"type": "string"}, "file": {"type": "string"}, "line": {"type": "integer"}, "issue": {"type": "string"}, "fix": {"type": "string"}, "codeSnippet": {"type": "string"}}}},
+          "verdict": {"type": "object", "properties": {"decision": {"type": "string", "enum": ["Approve", "Warning", "Block"]}, "criticalCount": {"type": "integer"}, "highCount": {"type": "integer"}}}
+        }
+      },
+      "forbiddenTools": ["Write", "Edit"],
+      "outOfScope": ["直接修改代码", "架构重构建议 (转 architect)"],
+      "errorHandling": "无法确定文件路径时跳过并标注；发现严重安全问题立即报告"
+    },
+    {
+      "id": "build-error-resolver",
+      "name": "build-error-resolver",
+      "file": "agents/build-error-resolver.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "description": "TypeScript/构建错误修复 (最小化 Diff)",
+      "triggerPatterns": ["构建失败", "编译错误", "type error", "build error", "tsc", "编译报错"],
+      "inputContract": {
+        "description": "接受构建/类型错误修复任务",
+        "requiredFields": ["errorMessage", "errorFile", "errorLine"],
+        "optionalFields": ["fullOutput", "recentChanges"],
+        "schema": {
+          "errorMessage": {"type": "string", "description": "错误消息"},
+          "errorFile": {"type": "string", "description": "错误文件路径"},
+          "errorLine": {"type": "integer", "description": "错误行号"},
+          "fullOutput": {"type": "string", "description": "完整构建输出"},
+          "recentChanges": {"type": "string", "description": "最近的代码变更"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["status", "fixes", "remainingErrors"],
+        "schema": {
+          "status": {"type": "string", "enum": ["SUCCESS", "FAILED", "PARTIAL"]},
+          "fixes": {"type": "array", "items": {"type": "object", "properties": {"file": {"type": "string"}, "error": {"type": "string"}, "fix": {"type": "string"}, "diff": {"type": "string"}}}},
+          "remainingErrors": {"type": "integer"},
+          "filesModified": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["架构重构", "代码风格优化", "功能新增"],
+      "errorHandling": "同一错误修复 3 次失败后停止并报告；发现更多错误时优先处理阻断性问题"
+    },
+    {
+      "id": "database-reviewer",
+      "name": "database-reviewer",
+      "file": "agents/database-reviewer.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "description": "PostgreSQL 查询优化、RLS、Schema 设计",
+      "triggerPatterns": ["SQL", "数据库", "schema", "migration", "查询优化", "索引", "RLS", "PostgreSQL", "Supabase", "数据库设计", "表结构", "慢查询", "性能优化", "外键", "存储过程", "设计数据库"],
+      "inputContract": {
+        "description": "接受 SQL/数据库相关任务",
+        "requiredFields": ["taskType", "sqlContent"],
+        "optionalFields": ["tableSchema", "queryPatterns", "performanceRequirements"],
+        "schema": {
+          "taskType": {"type": "string", "enum": ["schema-design", "query-review", "migration", "optimization", "rls-policy"]},
+          "sqlContent": {"type": "string", "description": "SQL 语句或迁移脚本"},
+          "tableSchema": {"type": "string", "description": "相关表结构"},
+          "queryPatterns": {"type": "array", "items": {"type": "string"}, "description": "常见查询模式"},
+          "performanceRequirements": {"type": "object", "properties": {"maxLatencyMs": {"type": "integer"}, "expectedQps": {"type": "integer"}}}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["reviewType", "findings", "recommendations"],
+        "schema": {
+          "reviewType": {"type": "string"},
+          "findings": {"type": "array", "items": {"type": "object", "properties": {"category": {"type": "string", "enum": ["performance", "security", "schema", "rls", "indexing"]}, "severity": {"type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]}, "description": {"type": "string"}, "suggestion": {"type": "string"}}}},
+          "recommendations": {"type": "array", "items": {"type": "string"}},
+          "explainAnalyze": {"type": "string", "description": "执行计划分析 (如适用)"}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["应用层业务逻辑", "非 PostgreSQL 数据库"],
+      "errorHandling": "无法运行 EXPLAIN 时说明原因；发现严重安全风险 (如缺少 RLS) 立即报告"
+    },
+    {
+      "id": "doc-updater",
+      "name": "doc-updater",
+      "file": "agents/doc-updater.md",
+      "model": "haiku",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "description": "Codemap 生成、文档更新",
+      "triggerPatterns": ["文档更新", "codemap", "API 文档", "README", "documentation", "codemap 生成"],
+      "inputContract": {
+        "description": "接受文档/Codemap 更新任务",
+        "requiredFields": ["updateType", "scope"],
+        "optionalFields": ["changedFiles", "lastUpdated"],
+        "schema": {
+          "updateType": {"type": "string", "enum": ["codemap", "readme", "api-docs", "guides", "full-refresh"]},
+          "scope": {"type": "array", "items": {"type": "string"}, "description": "需要更新的模块/目录"},
+          "changedFiles": {"type": "array", "items": {"type": "string"}},
+          "lastUpdated": {"type": "string", "format": "date"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["updatedFiles", "changes", "validationResults"],
+        "schema": {
+          "updatedFiles": {"type": "array", "items": {"type": "string"}},
+          "changes": {"type": "array", "items": {"type": "object", "properties": {"file": {"type": "string"}, "changeType": {"type": "string", "enum": ["created", "updated", "deprecated"]}, "summary": {"type": "string"}}}},
+          "validationResults": {"type": "object", "properties": {"linksValid": {"type": "boolean"}, "examplesCompile": {"type": "boolean"}, "timestampUpdated": {"type": "string"}}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["技术内容创作 (仅更新)", "架构决策"],
+      "errorHandling": "文件不存在时创建；链接失效时列出清单"
+    },
+    {
+      "id": "e2e-runner",
+      "name": "e2e-runner",
+      "file": "agents/e2e-runner.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "description": "E2E 测试 (Agent Browser/Playwright)",
+      "triggerPatterns": ["E2E 测试", "端到端测试", "playwright", "agent browser", "集成测试", "用户流程测试"],
+      "inputContract": {
+        "description": "接受 E2E 测试任务",
+        "requiredFields": ["userJourney", "testScenarios"],
+        "optionalFields": ["existingTests", "flakyTests", "artifactsPath"],
+        "schema": {
+          "userJourney": {"type": "string", "description": "用户流程描述"},
+          "testScenarios": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "steps": {"type": "array"}, "expectedResult": {"type": "string"}}}},
+          "existingTests": {"type": "array", "items": {"type": "string"}},
+          "flakyTests": {"type": "array", "items": {"type": "string"}},
+          "artifactsPath": {"type": "string"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["testResults", "artifacts"],
+        "schema": {
+          "testResults": {"type": "array", "items": {"type": "object", "properties": {"testName": {"type": "string"}, "status": {"type": "string", "enum": ["passed", "failed", "flaky", "skipped"]}, "duration": {"type": "number"}, "error": {"type": "string"}}}},
+          "artifacts": {"type": "object", "properties": {"screenshots": {"type": "array"}, "videos": {"type": "array"}, "traces": {"type": "array"}, "reportPath": {"type": "string"}}},
+          "summary": {"type": "object", "properties": {"total": {"type": "integer"}, "passed": {"type": "integer"}, "failed": {"type": "integer"}, "flakyRate": {"type": "number"}}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["单元测试", "性能测试", "安全测试"],
+      "errorHandling": "测试失败时自动重试 2 次；Flaky 测试自动标记并隔离"
+    },
+    {
+      "id": "go-build-resolver",
+      "name": "go-build-resolver",
+      "file": "agents/go-build-resolver.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "description": "Go 构建/编译错误修复",
+      "triggerPatterns": ["Go build", "go vet", "Go 编译", "golang error", "go mod"],
+      "inputContract": {
+        "description": "接受 Go 构建错误修复任务",
+        "requiredFields": ["errorMessage", "goVersion"],
+        "optionalFields": ["packagePath", "recentChanges"],
+        "schema": {
+          "errorMessage": {"type": "string", "description": "构建错误消息"},
+          "goVersion": {"type": "string", "description": "Go 版本"},
+          "packagePath": {"type": "string"},
+          "recentChanges": {"type": "string"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["status", "fixes", "buildResult"],
+        "schema": {
+          "status": {"type": "string", "enum": ["SUCCESS", "FAILED", "PARTIAL"]},
+          "fixes": {"type": "array", "items": {"type": "object", "properties": {"file": {"type": "string"}, "error": {"type": "string"}, "fix": {"type": "string"}}}},
+          "buildResult": {"type": "object", "properties": {"exitCode": {"type": "integer"}, "output": {"type": "string"}}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["架构重构", "代码风格优化"],
+      "errorHandling": "3 次修复失败后停止；模块问题优先使用 go mod tidy"
+    },
+    {
+      "id": "go-reviewer",
+      "name": "go-reviewer",
+      "file": "agents/go-reviewer.md",
+      "model": "sonnet",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "description": "Go 代码审查 (惯用法/并发/错误处理)",
+      "triggerPatterns": ["Go review", "golang review", "Go 代码审查", "Go 检查"],
+      "inputContract": {
+        "description": "接受 Go 代码审查请求",
+        "requiredFields": ["changedFiles", "diffContent"],
+        "optionalFields": ["reviewFocus"],
+        "schema": {
+          "changedFiles": {"type": "array", "items": {"type": "string"}},
+          "diffContent": {"type": "string"},
+          "reviewFocus": {"type": "array", "items": {"type": "string", "enum": ["idiomatic", "concurrency", "error-handling", "performance", "security"]}}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["findings", "verdict"],
+        "schema": {
+          "findings": {"type": "array", "items": {"type": "object", "properties": {"severity": {"type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]}, "category": {"type": "string"}, "file": {"type": "string"}, "line": {"type": "integer"}, "issue": {"type": "string"}, "suggestion": {"type": "string"}}}},
+          "verdict": {"type": "object", "properties": {"decision": {"type": "string", "enum": ["Approve", "Warning", "Block"]}, "criticalCount": {"type": "integer"}, "highCount": {"type": "integer"}}}
+        }
+      },
+      "forbiddenTools": ["Write", "Edit"],
+      "outOfScope": ["直接修改代码", "架构建议"],
+      "errorHandling": "无法确定行号时跳过；发现 Goroutine 泄漏风险立即报告"
+    },
+    {
+      "id": "python-reviewer",
+      "name": "python-reviewer",
+      "file": "agents/python-reviewer.md",
+      "model": "sonnet",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "description": "Python 代码审查 (PEP8/Type Hints/安全)",
+      "triggerPatterns": ["Python review", "Python 审查", "PEP8", "type hints", "Python 检查"],
+      "inputContract": {
+        "description": "接受 Python 代码审查请求",
+        "requiredFields": ["changedFiles", "diffContent"],
+        "optionalFields": ["reviewFocus", "pythonVersion"],
+        "schema": {
+          "changedFiles": {"type": "array", "items": {"type": "string"}},
+          "diffContent": {"type": "string"},
+          "reviewFocus": {"type": "array", "items": {"type": "string", "enum": ["pep8", "type-hints", "security", "pandas", "async"]}},
+          "pythonVersion": {"type": "string"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["findings", "verdict"],
+        "schema": {
+          "findings": {"type": "array", "items": {"type": "object", "properties": {"severity": {"type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]}, "category": {"type": "string"}, "file": {"type": "string"}, "line": {"type": "integer"}, "issue": {"type": "string"}, "suggestion": {"type": "string"}}}},
+          "verdict": {"type": "object", "properties": {"decision": {"type": "string", "enum": ["Approve", "Warning", "Block"]}, "criticalCount": {"type": "integer"}, "highCount": {"type": "integer"}}}
+        }
+      },
+      "forbiddenTools": ["Write", "Edit"],
+      "outOfScope": ["直接修改代码", "架构建议"],
+      "errorHandling": "发现 except: pass 立即报告；金额计算使用 float 时报告"
+    },
+    {
+      "id": "refactor-cleaner",
+      "name": "refactor-cleaner",
+      "file": "agents/refactor-cleaner.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "description": "死代码清理、重复代码整合",
+      "triggerPatterns": ["清理代码", "死代码", "unused code", "dead code", "knip", "depcheck", "重复代码", "代码整合", "重构", "优化代码结构", "清理", "整理", "可维护性", "代码优化"],
+      "inputContract": {
+        "description": "接受代码清理/重构任务",
+        "requiredFields": ["cleanupType", "scope"],
+        "optionalFields": ["excludePatterns", "preservePatterns"],
+        "schema": {
+          "cleanupType": {"type": "string", "enum": ["dead-code", "unused-exports", "unused-deps", "duplicates", "full-cleanup"]},
+          "scope": {"type": "array", "items": {"type": "string"}, "description": "清理范围"},
+          "excludePatterns": {"type": "array", "items": {"type": "string"}},
+          "preservePatterns": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["analysisResults", "actions", "validationResults"],
+        "schema": {
+          "analysisResults": {"type": "object", "properties": {"unusedFiles": {"type": "array"}, "unusedExports": {"type": "array"}, "unusedDeps": {"type": "array"}, "duplicates": {"type": "array"}}},
+          "actions": {"type": "array", "items": {"type": "object", "properties": {"action": {"type": "string", "enum": ["delete", "remove", "consolidate"]}, "target": {"type": "string"}, "reason": {"type": "string"}, "risk": {"type": "string", "enum": ["SAFE", "CAREFUL", "RISKY"]}}}},
+          "validationResults": {"type": "object", "properties": {"buildPasses": {"type": "boolean"}, "testsPass": {"type": "boolean"}}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["功能重构", "架构调整"],
+      "errorHandling": "不确定是否使用时保留；每次清理后必须验证构建和测试"
+    },
+    {
+      "id": "security-reviewer",
+      "name": "security-reviewer",
+      "file": "agents/security-reviewer.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "description": "安全漏洞检测 (OWASP Top 10/密钥扫描)",
+      "triggerPatterns": ["安全审查", "security review", "漏洞检测", "OWASP", "密钥扫描", "渗透测试", "安全审计", "安全问题", "漏洞", "注入", "XSS", "CSRF", "权限", "认证", "鉴权", "硬编码", "API 密钥", "密码", "token", "credential"],
+      "inputContract": {
+        "description": "接受安全审查任务",
+        "requiredFields": ["reviewScope", "reviewType"],
+        "optionalFields": ["changedFiles", "sensitivePaths"],
+        "schema": {
+          "reviewScope": {"type": "array", "items": {"type": "string"}, "description": "审查范围 (文件/目录/API)"},
+          "reviewType": {"type": "string", "enum": ["code-review", "dependency-scan", "secret-detection", "full-audit"]},
+          "changedFiles": {"type": "array", "items": {"type": "string"}},
+          "sensitivePaths": {"type": "array", "items": {"type": "string"}, "description": "敏感路径 (auth/payment/webhooks)"}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["vulnerabilities", "remediations", "riskScore"],
+        "schema": {
+          "vulnerabilities": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "category": {"type": "string", "enum": ["injection", "auth", "data-exposure", "xxe", "access-control", "config", "xss", "deserialization", "dependency", "logging"]}, "severity": {"type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]}, "location": {"type": "string"}, "description": {"type": "string"}, "cwe": {"type": "string"}, "remediation": {"type": "string"}}}},
+          "remediations": {"type": "array", "items": {"type": "string"}},
+          "riskScore": {"type": "integer", "minimum": 0, "maximum": 100},
+          "summary": {"type": "object", "properties": {"critical": {"type": "integer"}, "high": {"type": "integer"}, "medium": {"type": "integer"}, "low": {"type": "integer"}}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["非 Web 安全 (物理/网络)", "性能测试"],
+      "errorHandling": "发现 CRITICAL 漏洞立即停止并报告；不确定时标注置信度"
+    },
+    {
+      "id": "tdd-guide",
+      "name": "tdd-guide",
+      "file": "agents/tdd-guide.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep"],
+      "description": "测试驱动开发 (80%+ 覆盖率)",
+      "triggerPatterns": ["TDD", "测试驱动", "编写测试", "单元测试", "测试覆盖率", "test coverage", "测试用例", "pytest", "jest", "测试", "集成测试", "端到端测试"],
+      "inputContract": {
+        "description": "接受 TDD/测试编写任务",
+        "requiredFields": ["featureName", "testType", "testScenarios"],
+        "optionalFields": ["existingTests", "mockConfig"],
+        "schema": {
+          "featureName": {"type": "string"},
+          "testType": {"type": "string", "enum": ["unit", "integration", "e2e"]},
+          "testScenarios": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "given": {"type": "string"}, "when": {"type": "string"}, "then": {"type": "string"}}}},
+          "existingTests": {"type": "array", "items": {"type": "string"}},
+          "mockConfig": {"type": "object", "properties": {"externalServices": {"type": "array"}, "databases": {"type": "array"}}}
+        }
+      },
+      "outputContract": {
+        "format": "json",
+        "requiredFields": ["testsCreated", "coverageReport", "tdCycleResults"],
+        "schema": {
+          "testsCreated": {"type": "array", "items": {"type": "object", "properties": {"file": {"type": "string"}, "testName": {"type": "string"}, "scenario": {"type": "string"}, "status": {"type": "string", "enum": ["created", "updated", "skipped"]}}}},
+          "coverageReport": {"type": "object", "properties": {"lines": {"type": "number"}, "branches": {"type": "number"}, "functions": {"type": "number"}, "statements": {"type": "number"}}},
+          "tdCycleResults": {"type": "object", "properties": {"redCount": {"type": "integer"}, "greenCount": {"type": "integer"}, "refactorCount": {"type": "integer"}}}
+        }
+      },
+      "forbiddenTools": [],
+      "outOfScope": ["非测试代码编写 (实现代码仅在测试后)", "性能测试"],
+      "errorHandling": "测试无法运行时检查环境配置；覆盖率不达标时列出未覆盖路径"
+    }
+  ],
+  "globalSettings": {
+    "contextIsolation": {
+      "enabled": true,
+      "whitelistFields": ["taskType", "requirements", "context", "constraints", "changedFiles", "diffContent"],
+      "blacklistFields": ["fullConversationHistory", "internalNotes", "credentials"]
+    },
+    "returnValidation": {
+      "enabled": true,
+      "schemaValidation": true,
+      "requiredFieldsCheck": true,
+      "onValidationError": "reject-and-notify"
+    },
+    "errorHandling": {
+      "maxRetries": 2,
+      "retryDelayMs": 1000,
+      "escalationPath": "user-notification"
+    }
+  }
+}
